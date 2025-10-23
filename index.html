@@ -7,12 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="Assets/fivicon.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header>
     <div class="container header-inner">
-      <h1 class="logo">Swayam NPTEL Portal</h1>
+      <div class="logo" aria-label="Swayam NPTEL">
+        <img src="Assets/logo.png" alt="Swayam NPTEL Logo" class="logo-img">
+        <span class="logo-text">Swayam NPTEL Portal</span>
+      </div>
       <nav class="nav">
         <a href="#" class="nav-link">Home</a>
         <a href="#features" class="nav-link">Features</a>
@@ -34,7 +38,26 @@
             <a href="#features" class="link-btn">Explore Features</a>
           </div>
         </div>
-        <div class="hero-art"></div>
+        <div class="hero-media">
+          <div class="video-wrap">
+            <iframe class="hero-video" src="https://www.youtube.com/embed/lcpHTBWmJ6U" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="institutes">
+      <div class="container">
+        <div class="logos-row">
+          <img src="Assets/IITB.png" alt="IIT Bombay" />
+          <img src="Assets/IITD.png" alt="IIT Delhi" />
+          <img src="Assets/IITG.png" alt="IIT Guwahati" />
+          <img src="Assets/IITK.png" alt="IIT Kanpur" />
+          <img src="Assets/IITKH.png" alt="IIT Kharagpur" />
+          <img src="Assets/IITM.png" alt="IIT Madras" />
+          <img src="Assets/IITR.png" alt="IIT Roorkee" />
+          <img src="Assets/IIS.png" alt="IISc Bangalore" />
+        </div>
       </div>
     </section>
 
@@ -107,7 +130,10 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div class="footer-left">
-        <div class="logo">Swayam NPTEL Portal</div>
+        <div class="logo" aria-label="Swayam NPTEL">
+          <img src="Assets/logo.png" alt="Swayam NPTEL Logo" class="logo-img small">
+          <span class="logo-text">Swayam NPTEL Portal</span>
+        </div>
         <div class="muted">© <span id="year"></span> All rights reserved.</div>
       </div>
       <div class="footer-links">
