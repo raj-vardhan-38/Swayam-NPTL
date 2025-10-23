@@ -8,6 +8,9 @@ const modalClose = document.getElementById('modalClose');
 const loginForm = document.getElementById('loginForm');
 const loginBtn = document.getElementById('loginBtn');
 const main = document.getElementById('mainContent');
+let isLoggedIn = false;
+let originalMainHTML = main ? main.innerHTML : '';
+let originalNavHTML = '';
 
 function openModal() {
   if (modal) modal.classList.remove('hidden');
@@ -41,6 +44,9 @@ if (loginForm) {
     if (username === validUser && password === validPass) {
       closeModal();
       if (loginBtn) loginBtn.classList.add('hidden');
+      isLoggedIn = true;
+      ensureLogoutButton();
+      removeNavItem('Features');
       renderDashboard({ name: 'Lav Singh' });
     } else {
       alert('Invalid credentials.');
@@ -49,19 +55,19 @@ if (loginForm) {
 }
 
 function renderDashboard(user) {
-  // random helpers
+  // static helpers and values (fixed across reloads)
   const fmt = (n) => n.toLocaleString('en-IN');
   const totalCandidates = 17845;
-  const rank = Math.floor(3000 + Math.random() * 8000);
-  const overall = Math.floor(25 + Math.random() * 50);
-  const accuracy = Math.floor(40 + Math.random() * 40);
-  const avgTime = (1.4 + Math.random() * 1.2).toFixed(1); // min/question
-  const attempted = Math.floor(12 + Math.random() * 8);
-  const lastActive = new Date().toLocaleDateString('en-GB');
+  const rank = 9385;
+  const overall = 48;
+  const accuracy = 48;
+  const avgTime = '1.5'; // min/question
+  const attempted = 18;
+  const lastActive = '23/10/2025';
 
   const recent = [
-    { name: 'GATE CS Mock Test 1', date: '05/10/25', score: `${overall} / 100`, status: 'Attempted' },
-    { name: 'GATE CS Mock Test 2', date: '12/10/25', score: `${Math.max(20, overall - 6)} / 100`, status: 'Attempted' },
+    { name: 'GATE CS Mock Test 1', date: '05/10/25', score: '48 / 100', status: 'Attempted' },
+    { name: 'GATE CS Mock Test 2', date: '12/10/25', score: '42 / 100', status: 'Attempted' },
     { name: 'Algorithms - Topic Test', date: '15/10/25', score: '—', status: 'Missed' },
     { name: 'DSA Full-Length 1', date: '19/10/25', score: '—', status: 'Missed' },
   ];
@@ -77,9 +83,19 @@ function renderDashboard(user) {
       </tr>
   `).join('');
 
-  const improvement = (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 5 + 1);
+  const improvement = 1;
   main.innerHTML = `
     <section class="dashboard">
+      <div class="section" aria-label="Payments Banner" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <h4 style="margin:0 0 6px;">Payments</h4>
+          <div id="payStatus" class="muted">Click the button to check dues status.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="payActionBtn" class="primary-btn">Check Dues</button>
+          <button id="receiptDownloadBtn" class="primary-btn hidden">Download Receipt</button>
+        </div>
+      </div>
       <div class="summary" aria-label="Summary">
         <div class="summary-card">
           <h4 class="summary-title"><span class="summary-emoji">🏆</span> Summary</h4>
@@ -146,11 +162,6 @@ function renderDashboard(user) {
           <h4>Last Active</h4>
           <div style="font-size:24px;font-weight:700;">${lastActive}</div>
         </div>
-        <div class="card" aria-label="Payments">
-          <h4>Payments</h4>
-          <p class="muted" style="margin:0 0 10px;">Download your latest payment receipt in PDF format.</p>
-          <button id="receiptBtn" class="primary-btn">Download Payment Receipt</button>
-        </div>
       </div>
 
       <div class="section">
@@ -172,47 +183,35 @@ function renderDashboard(user) {
     </section>
   `;
 
-  const receiptBtn = document.getElementById('receiptBtn');
-  if (receiptBtn) {
-    receiptBtn.addEventListener('click', async () => {
-      // Allow overriding path globally if you set: window.RECEIPT_PATH = 'Assets/receipt.pdf'
-      const preset = window.RECEIPT_PATH && typeof window.RECEIPT_PATH === 'string' ? [window.RECEIPT_PATH] : [];
+  // Payment banner behavior: first click confirms 'No Dues', then allow receipt download
+  const payBtn = document.getElementById('payActionBtn');
+  const payStatus = document.getElementById('payStatus');
+  const dlBtn = document.getElementById('receiptDownloadBtn');
+  if (payBtn && payStatus && dlBtn) {
+    payBtn.addEventListener('click', () => {
+      payStatus.textContent = 'You have no dues.';
+      dlBtn.classList.remove('hidden');
+      payBtn.classList.add('hidden');
+    });
+    dlBtn.addEventListener('click', async () => {
       const candidates = [
-        ...preset,
-        'Assets/reciept.pdf', // common misspelling
+        'Assets/reciept.pdf',
         'Assets/receipt.pdf',
         'reciept.pdf',
         'receipt.pdf'
       ];
-
-      const isHttp = location.protocol.startsWith('http');
       let chosen = candidates[0];
-
-      if (isHttp) {
-        // Try to find the first reachable candidate
+      if (location.protocol.startsWith('http')) {
         for (const c of candidates) {
-          try {
-            const res = await fetch(c, { method: 'HEAD', cache: 'no-store' });
-            if (res.ok) { chosen = c; break; }
-          } catch (_) { /* ignore and continue */ }
+          try { const r = await fetch(c, { method: 'HEAD', cache: 'no-store' }); if (r.ok) { chosen = c; break; } } catch(_) {}
         }
       }
-
-      const link = document.createElement('a');
-      link.style.display = 'none';
-      link.target = '_blank';
-      link.href = chosen;
-      link.download = 'Payment_Receipt.pdf';
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => link.remove(), 0);
-
-      // Help user if likely missing under file:// scheme
-      if (!isHttp) {
-        setTimeout(() => {
-          alert('If the receipt did not download, place your PDF at "Assets/reciept.pdf" or set window.RECEIPT_PATH to the exact relative path in the browser console and click again.');
-        }, 50);
-      }
+      const a = document.createElement('a');
+      a.href = chosen;
+      a.download = 'Payment_Receipt.pdf';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>a.remove(),0);
     });
   }
 }
@@ -221,10 +220,27 @@ function renderDashboard(user) {
 document.addEventListener('DOMContentLoaded', () => {
   const y = document.getElementById('year');
   if (y) y.textContent = new Date().getFullYear().toString();
+  // Cache initial homepage markup for restoring on Home/Logout
+  if (main) originalMainHTML = main.innerHTML;
+  const nav = document.querySelector('.nav');
+  if (nav) {
+    originalNavHTML = nav.innerHTML;
+  }
+
+  // Group nav and auth buttons on the right side
+  groupHeaderRight();
+  // Remove Pricing link always
+  removeNavItem('Pricing');
 
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
       const href = a.getAttribute('href');
+      // If Home clicked while logged in, restore homepage
+      if (href === '#' && isLoggedIn) {
+        e.preventDefault();
+        restoreHomepage();
+        return;
+      }
       if (!href || href === '#') return;
       const target = document.querySelector(href);
       if (target) {
@@ -246,3 +262,62 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 });
+
+// Adds a Logout button to the header next to the (hidden) Login button
+function ensureLogoutButton() {
+  const headerInner = document.querySelector('.header-inner');
+  if (!headerInner || document.getElementById('logoutBtn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'logoutBtn';
+  btn.textContent = 'Logout';
+  btn.className = 'primary-btn';
+  btn.addEventListener('click', () => restoreHomepage());
+  const actions = document.querySelector('.header-actions') || headerInner;
+  actions.appendChild(btn);
+}
+
+// Restores original homepage and clears login state
+function restoreHomepage() {
+  if (main && originalMainHTML) {
+    main.innerHTML = originalMainHTML;
+  }
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.remove();
+  if (loginBtn) loginBtn.classList.remove('hidden');
+  isLoggedIn = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Restore original nav (including Features) and regroup header
+  const nav = document.querySelector('.nav');
+  if (nav && originalNavHTML) {
+    nav.innerHTML = originalNavHTML;
+  }
+  groupHeaderRight();
+  removeNavItem('Pricing');
+}
+
+// Utility: move nav and login/logout buttons to the right side wrapper
+function groupHeaderRight() {
+  const headerInner = document.querySelector('.header-inner');
+  const nav = document.querySelector('.nav');
+  if (!headerInner) return;
+  let actions = document.querySelector('.header-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'header-actions';
+    headerInner.appendChild(actions);
+  }
+  if (nav && nav.parentElement !== actions) actions.appendChild(nav);
+  if (loginBtn && loginBtn.parentElement !== actions) actions.appendChild(loginBtn);
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn && logoutBtn.parentElement !== actions) actions.appendChild(logoutBtn);
+}
+
+// Utility: remove a nav item by its visible text
+function removeNavItem(text) {
+  document.querySelectorAll('.nav a').forEach(a => {
+    if (a.textContent.trim().toLowerCase() === text.toLowerCase()) {
+      a.remove();
+    }
+  });
+}
